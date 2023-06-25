@@ -31,6 +31,7 @@ namespace RedMango_API_practice.Controllers
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
         }
+
         [HttpGet("{id:int}", Name = "GetMenuItem")]
         public async Task<IActionResult> GetMenuItem(int id)
         {
@@ -44,14 +45,16 @@ namespace RedMango_API_practice.Controllers
             if (menuItem == null)
             {
                 _response.StatusCode = HttpStatusCode.NotFound;
+                _response.IsSuccess = false;
                 return NotFound(_response);
             }
             _response.Result = menuItem;
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
         }
+
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> CreateMenuItem([FromForm]MenuItemCreateDTO menuItemCreateDTO)
+        public async Task<ActionResult<ApiResponse>> CreateMenuItem([FromForm] MenuItemCreateDTO menuItemCreateDTO)
         {
             try
             {
@@ -59,6 +62,8 @@ namespace RedMango_API_practice.Controllers
                 {
                     if (menuItemCreateDTO.File == null || menuItemCreateDTO.File.Length == 0)
                     {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
                         return BadRequest();
                     }
                     string fileName = $"{Guid.NewGuid()}{Path.GetExtension(menuItemCreateDTO.File.FileName)}";
@@ -85,7 +90,7 @@ namespace RedMango_API_practice.Controllers
 
             }
             catch (Exception ex)
-            { 
+            {
                 _response.IsSuccess = false;
                 _response.ErrorsMessages
                     = new List<string> { ex.ToString() };
@@ -93,6 +98,7 @@ namespace RedMango_API_practice.Controllers
             }
             return _response;
         }
+
         [HttpPut("{id:int}")]
         public async Task<ActionResult<ApiResponse>> UpdateMenuItem(int id, [FromForm] MenuItemUpdateDTO menuItemUpdateDTO)
         {
@@ -102,11 +108,15 @@ namespace RedMango_API_practice.Controllers
                 {
                     if (menuItemUpdateDTO == null || id != menuItemUpdateDTO.Id)
                     {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
                         return BadRequest();
                     }
                     MenuItem menuItemFromDb = await _db.MenuItems.FindAsync(id);
-                    if(menuItemFromDb == null)
+                    if (menuItemFromDb == null)
                     {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
                         return BadRequest();
                     }
 
@@ -145,5 +155,43 @@ namespace RedMango_API_practice.Controllers
             return _response;
         }
 
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> DeleteMenuItem(int id)
+        {
+            try
+            {
+                if (id == 0)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    return BadRequest();
+                }
+                MenuItem menuItemFromDb = await _db.MenuItems.FindAsync(id);
+                if (menuItemFromDb == null)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    return BadRequest();
+                }
+                await _blobService.DeleteBlob(menuItemFromDb.Image.Split("/").Last(), SD.SD_Storage_Container);
+                int milliseconds = 2000;
+                Thread.Sleep(milliseconds);
+
+                _db.MenuItems.Remove(menuItemFromDb);
+                _db.SaveChanges();
+                _response.StatusCode = HttpStatusCode.NoContent;
+                return Ok(_response);
+
+
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorsMessages
+                    = new List<string> { ex.ToString() };
+
+            }
+            return _response;
+        }
     }
 }
