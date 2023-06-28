@@ -64,7 +64,7 @@ namespace RedMango_API_practice.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.BadRequest;
                         _response.IsSuccess = false;
-                        return BadRequest();
+                        return BadRequest(_response);
                     }
                     string fileName = $"{Guid.NewGuid()}{Path.GetExtension(menuItemCreateDTO.File.FileName)}";
                     MenuItem menuItemToCreate = new()
@@ -110,14 +110,14 @@ namespace RedMango_API_practice.Controllers
                     {
                         _response.StatusCode = HttpStatusCode.BadRequest;
                         _response.IsSuccess = false;
-                        return BadRequest();
+                        return BadRequest(_response);
                     }
                     MenuItem menuItemFromDb = await _db.MenuItems.FindAsync(id);
                     if (menuItemFromDb == null)
                     {
                         _response.StatusCode = HttpStatusCode.BadRequest;
                         _response.IsSuccess = false;
-                        return BadRequest();
+                        return BadRequest(_response);
                     }
 
                     menuItemFromDb.Name = menuItemUpdateDTO.Name;
@@ -164,14 +164,14 @@ namespace RedMango_API_practice.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.IsSuccess = false;
-                    return BadRequest();
+                    return BadRequest(_response);
                 }
                 MenuItem menuItemFromDb = await _db.MenuItems.FindAsync(id);
                 if (menuItemFromDb == null)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.IsSuccess = false;
-                    return BadRequest();
+                    return BadRequest(_response);
                 }
                 await _blobService.DeleteBlob(menuItemFromDb.Image.Split("/").Last(), SD.SD_Storage_Container);
                 int milliseconds = 2000;
